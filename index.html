@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buscador de podcasts de IA</title>
+<style>
+  :root { --bg:#f7f7fb; --card:#fff; --text:#1b1b25; --muted:#6b6b80; --accent:#5b4bff; --border:#e4e4ee; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12121a; --card:#1c1c28; --text:#ececf4; --muted:#9a9ab0; --accent:#8b7fff; --border:#2c2c3c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { margin: 0 0 4px; font-size: 1.8rem; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  form { display:flex; gap:8px; }
+  input[type=search] { flex:1; padding:12px 14px; font-size:1rem; border:1px solid var(--border); border-radius:10px; background:var(--card); color:var(--text); }
+  button { padding:12px 18px; font-size:1rem; border:0; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--border); padding:6px 12px; font-size:.85rem; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 24px; }
+  .chip { padding:6px 12px; font-size:.85rem; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:999px; }
+  .chip:hover { border-color:var(--accent); }
+  .status { color:var(--muted); margin:12px 0; }
+  .grid { display:grid; gap:14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; gap:12px; }
+  .card img { width:84px; height:84px; border-radius:10px; object-fit:cover; flex:none; background:var(--border); }
+  .card h3 { margin:0 0 2px; font-size:1rem; line-height:1.25; }
+  .card p { margin:0 0 8px; color:var(--muted); font-size:.85rem; }
+  .actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .actions a { text-decoration:none; }
+  .eps { grid-column:1/-1; background:var(--card); border:1px solid var(--accent); border-radius:14px; padding:14px; }
+  .ep { padding:10px 0; border-top:1px solid var(--border); }
+  .ep:first-of-type { border-top:0; }
+  .ep b { display:block; }
+  .ep small { color:var(--muted); }
+  audio { width:100%; margin-top:6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎙️ Podcasts de IA</h1>
+  <p class="sub">Busca podcasts sobre inteligencia artificial (datos de Apple Podcasts).</p>
+
+  <form id="form">
+    <input id="q" type="search" placeholder="Ej: machine learning, LLMs, ética de la IA…" autofocus>
+    <button>Buscar</button>
+  </form>
+
+  <div class="chips" id="chips"></div>
+  <div class="status" id="status"></div>
+  <div class="grid" id="results"></div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const suggestions = ["inteligencia artificial","machine learning","LLM","ChatGPT","deep learning","AI news","robótica","AI ethics"];
+
+suggestions.forEach(s => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip"; b.textContent = s;
+  b.onclick = () => { $("q").value = s; search(); };
+  $("chips").appendChild(b);
+});
+
+$("form").addEventListener("submit", e => { e.preventDefault(); search(); });
+
+async function api(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("Error " + r.status);
+  return r.json();
+}
+
+async function search() {
+  const q = $("q").value.trim();
+  if (!q) return;
+  // Si el término no menciona IA, lo añadimos para acotar a podcasts de IA
+  const term = /\b(ia|ai|inteligencia|artificial|machine|llm|gpt|deep|neural|robot)/i.test(q) ? q : q + " AI";
+  $("status").textContent = "Buscando…";
+  $("results").innerHTML = "";
+  try {
+    const d = await api(`https://itunes.apple.com/search?media=podcast&entity=podcast&limit=40&term=${encodeURIComponent(term)}`);
+    $("status").textContent = d.resultCount ? `${d.resultCount} podcasts encontrados` : "Sin resultados.";
+    d.results.forEach(renderCard);
+  } catch (err) {
+    $("status").textContent = "No se pudo buscar: " + err.message;
+  }
+}
+
+function renderCard(p) {
+  const el = document.createElement("div");
+  el.className = "card";
+  const img = document.createElement("img");
+  img.src = p.artworkUrl100 || ""; img.alt = ""; img.loading = "lazy";
+  const body = document.createElement("div");
+  const h = document.createElement("h3"); h.textContent = p.collectionName;
+  const meta = document.createElement("p");
+  meta.textContent = `${p.artistName} · ${p.trackCount ?? "?"} eps · ${p.primaryGenreName ?? ""}`;
+  const act = document.createElement("div"); act.className = "actions";
+  const eps = document.createElement("button"); eps.className = "ghost"; eps.textContent = "Ver episodios";
+  eps.onclick = () => toggleEpisodes(p, el, eps);
+  const link = document.createElement("a");
+  link.href = p.collectionViewUrl; link.target = "_blank"; link.rel = "noopener";
+  const lb = document.createElement("button"); lb.className = "ghost"; lb.textContent = "Abrir";
+  link.appendChild(lb);
+  act.append(eps, link);
+  body.append(h, meta, act);
+  el.append(img, body);
+  $("results").appendChild(el);
+}
+
+async function toggleEpisodes(p, card, btn) {
+  const next = card.nextElementSibling;
+  if (next && next.classList.contains("eps") && next.dataset.id == p.collectionId) {
+    next.remove(); btn.textContent = "Ver episodios"; return;
+  }
+  document.querySelectorAll(".eps").forEach(e => e.remove());
+  const box = document.createElement("div");
+  box.className = "eps"; box.dataset.id = p.collectionId;
+  box.textContent = "Cargando episodios…";
+  card.after(box);
+  btn.textContent = "Ocultar";
+  try {
+    const d = await api(`https://itunes.apple.com/lookup?id=${p.collectionId}&entity=podcastEpisode&limit=8`);
+    const eps = d.results.filter(r => r.kind === "podcast-episode");
+    box.textContent = "";
+    if (!eps.length) { box.textContent = "No hay episodios disponibles."; return; }
+    eps.forEach(e => {
+      const div = document.createElement("div"); div.className = "ep";
+      const t = document.createElement("b"); t.textContent = e.trackName;
+      const s = document.createElement("small");
+      const mins = e.trackTimeMillis ? Math.round(e.trackTimeMillis / 60000) + " min · " : "";
+      s.textContent = mins + new Date(e.releaseDate).toLocaleDateString("es");
+      div.append(t, s);
+      if (e.episodeUrl) {
+        const a = document.createElement("audio");
+        a.controls = true; a.preload = "none"; a.src = e.episodeUrl;
+        div.appendChild(a);
+      }
+      box.appendChild(div);
+    });
+  } catch (err) {
+    box.textContent = "No se pudieron cargar los episodios: " + err.message;
+  }
+}
+</script>
+</body>
+</html>
