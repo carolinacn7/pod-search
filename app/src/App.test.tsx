@@ -1,8 +1,13 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
+import { appleResponse, stubFetchJson } from './test/apple'
 
 describe('App', () => {
+  beforeEach(() => {
+    stubFetchJson(appleResponse)
+  })
+
   it('muestra el título "Pod Search"', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 1, name: 'Pod Search' })).toBeInTheDocument()
@@ -21,15 +26,16 @@ describe('App', () => {
     expect(screen.getByLabelText('Buscar podcasts')).toHaveValue('')
   })
 
-  it('muestra debajo de la caja la lista con los tres podcasts', () => {
+  it('muestra debajo de la caja la lista con los tres podcasts', async () => {
     render(<App />)
     const results = screen.getByRole('region', { name: 'Resultados' })
-    expect(within(results).getAllByRole('listitem')).toHaveLength(3)
+    expect(await within(results).findAllByRole('listitem')).toHaveLength(3)
     expect(within(results).getByRole('heading', { name: 'Ética y Algoritmos' })).toBeInTheDocument()
   })
 
-  it('la tarjeta sin episodeCount no muestra "undefined"', () => {
+  it('la tarjeta sin episodeCount no muestra "undefined"', async () => {
     render(<App />)
+    await screen.findAllByRole('listitem')
     expect(screen.getByRole('region', { name: 'Resultados' })).not.toHaveTextContent('undefined')
   })
 
