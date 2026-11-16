@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 
@@ -21,10 +21,16 @@ describe('App', () => {
     expect(screen.getByLabelText('Buscar podcasts')).toHaveValue('')
   })
 
-  it('muestra el aviso inicial en el espacio de resultados', () => {
+  it('muestra debajo de la caja la lista con los tres podcasts', () => {
     render(<App />)
     const results = screen.getByRole('region', { name: 'Resultados' })
-    expect(results).toHaveTextContent('Escribe algo arriba para empezar a buscar.')
+    expect(within(results).getAllByRole('listitem')).toHaveLength(3)
+    expect(within(results).getByRole('heading', { name: 'Ética y Algoritmos' })).toBeInTheDocument()
+  })
+
+  it('la tarjeta sin episodeCount no muestra "undefined"', () => {
+    render(<App />)
+    expect(screen.getByRole('region', { name: 'Resultados' })).not.toHaveTextContent('undefined')
   })
 
   it('lo que se escribe se ve al instante en la caja', async () => {
@@ -36,9 +42,8 @@ describe('App', () => {
     expect(input).toHaveValue('machine learning')
   })
 
-  it('todavía no tiene botón ni lista de resultados', () => {
+  it('todavía no tiene botón de búsqueda', () => {
     render(<App />)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
-    expect(screen.queryByRole('list')).not.toBeInTheDocument()
   })
 })
