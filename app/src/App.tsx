@@ -2,6 +2,7 @@ import { useState } from 'react'
 import SearchBox from './SearchBox'
 import PodcastList from './PodcastList'
 import { mockPodcasts } from './mockPodcasts'
+import { filterPodcasts } from './filterPodcasts'
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -14,7 +15,7 @@ export default function App() {
       <SearchBox value={query} onChange={setQuery} />
 
       <section className="results" aria-label="Resultados">
-        <PodcastList podcasts={mockPodcasts} />
+        <PodcastList podcasts={filterPodcasts(mockPodcasts, query)} />
       </section>
     </main>
   )
