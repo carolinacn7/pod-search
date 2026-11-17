@@ -53,6 +53,7 @@
 </main>
 
 <script>
+const ITUNES_API_URL = "https://itunes.apple.com";
 const $ = id => document.getElementById(id);
 const suggestions = ["inteligencia artificial","machine learning","LLM","ChatGPT","deep learning","AI news","robótica","AI ethics"];
 
@@ -79,7 +80,7 @@ async function search() {
   $("status").textContent = "Buscando…";
   $("results").innerHTML = "";
   try {
-    const d = await api(`https://itunes.apple.com/search?media=podcast&entity=podcast&limit=40&term=${encodeURIComponent(term)}`);
+    const d = await api(`${ITUNES_API_URL}/search?media=podcast&entity=podcast&limit=40&term=${encodeURIComponent(term)}`);
     $("status").textContent = d.resultCount ? `${d.resultCount} podcasts encontrados` : "Sin resultados.";
     d.results.forEach(renderCard);
   } catch (err) {
@@ -121,7 +122,7 @@ async function toggleEpisodes(p, card, btn) {
   card.after(box);
   btn.textContent = "Ocultar";
   try {
-    const d = await api(`https://itunes.apple.com/lookup?id=${p.collectionId}&entity=podcastEpisode&limit=8`);
+    const d = await api(`${ITUNES_API_URL}/lookup?id=${p.collectionId}&entity=podcastEpisode&limit=8`);
     const eps = d.results.filter(r => r.kind === "podcast-episode");
     box.textContent = "";
     if (!eps.length) { box.textContent = "No hay episodios disponibles."; return; }
