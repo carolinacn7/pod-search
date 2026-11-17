@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import SearchBox from './SearchBox'
 import PodcastList from './PodcastList'
 import { filterPodcasts } from './filterPodcasts'
-import { searchPodcasts } from './itunes'
-import type { Podcast } from './types'
+import type { Podcast, SearchPodcasts } from './types'
 
 // Espera tras la última tecla antes de buscar, para no consultar a Apple por cada letra.
 const DEBOUNCE_MS = 400
@@ -18,7 +17,12 @@ type Load =
   | { status: 'error' }
   | { status: 'ready'; podcasts: Podcast[]; term: string }
 
-export default function App() {
+type AppProps = {
+  /** La fuente de datos. Quien arma la app decide cuál; App no sabe de iTunes. */
+  search: SearchPodcasts
+}
+
+export default function App({ search }: AppProps) {
   const [query, setQuery] = useState('')
   const [load, setLoad] = useState<Load>({ status: 'loading', previous: null })
 
@@ -42,14 +46,14 @@ export default function App() {
       status: 'loading',
       previous: prev.status === 'ready' ? prev.podcasts : prev.status === 'loading' ? prev.previous : null,
     }))
-    searchPodcasts(term, controller.signal).then(
+    search(term, controller.signal).then(
       (podcasts) => setLoad({ status: 'ready', podcasts, term }),
       () => {
         if (!controller.signal.aborted) setLoad({ status: 'error' })
       },
     )
     return () => controller.abort()
-  }, [term])
+  }, [term, search])
 
   // El filtro local solo vale mientras la lista en pantalla no corresponde a lo escrito:
   // con la respuesta de Apple para ese texto se muestra todo lo que devolvió.

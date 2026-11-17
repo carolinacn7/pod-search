@@ -8,3 +8,6 @@ export type Podcast = {
   /** Opcional: no todas las fuentes saben cuántos episodios tiene un show. */
   episodeCount?: number
 }
+
+/** Contrato de cualquier fuente de podcasts: la app solo conoce esto, no de dónde vienen los datos. */
+export type SearchPodcasts = (term: string, signal?: AbortSignal) => Promise<Podcast[]>

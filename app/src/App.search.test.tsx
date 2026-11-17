@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
+import { searchPodcasts } from './itunes'
 import { appleResponse, stubFetchJson } from './test/apple'
 
 const terms = (fetchMock: ReturnType<typeof stubFetchJson>) =>
@@ -12,7 +13,7 @@ describe('App: busca en Apple mientras se escribe', () => {
 
   it('espera a que se deje de escribir y hace una sola búsqueda con el texto completo', async () => {
     const fetchMock = stubFetchJson(appleResponse)
-    render(<App />)
+    render(<App search={searchPodcasts} />)
     await screen.findAllByRole('listitem')
 
     await userEvent.type(screen.getByLabelText('Buscar podcasts'), 'ética')
@@ -25,7 +26,7 @@ describe('App: busca en Apple mientras se escribe', () => {
 
   it('al vaciar la caja vuelve al término inicial', async () => {
     const fetchMock = stubFetchJson(appleResponse)
-    render(<App />)
+    render(<App search={searchPodcasts} />)
     await screen.findAllByRole('listitem')
     const input = screen.getByLabelText('Buscar podcasts')
 
@@ -44,7 +45,7 @@ describe('App: mientras llega la búsqueda nueva', () => {
 
   it('la lista en pantalla se filtra localmente, sin datos del término anterior', async () => {
     const fetchMock = stubFetchJson(appleResponse)
-    render(<App />)
+    render(<App search={searchPodcasts} />)
     await screen.findAllByRole('listitem')
 
     // La siguiente búsqueda queda pendiente: no resuelve nunca.
@@ -64,7 +65,7 @@ describe('App: cuando llega la respuesta de Apple', () => {
 
   it('muestra todo lo que devuelve Apple, sin filtrar localmente', async () => {
     stubFetchJson(appleResponse) // Apple responde 3 podcasts también para "etica"
-    render(<App />)
+    render(<App search={searchPodcasts} />)
     await screen.findAllByRole('listitem')
 
     await userEvent.type(screen.getByLabelText('Buscar podcasts'), 'etica')

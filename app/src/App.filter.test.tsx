@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
+import { searchPodcasts } from './itunes'
 import { appleResponse, stubFetchJson } from './test/apple'
 
 const results = () => screen.getByRole('region', { name: 'Resultados' })
@@ -8,7 +9,7 @@ const shownTitles = () => within(results()).queryAllByRole('heading').map((h) =>
 
 // Renderiza y espera a que lleguen los podcasts (simulados) antes de buscar en ellos.
 async function renderLoaded() {
-  render(<App />)
+  render(<App search={searchPodcasts} />)
   await screen.findAllByRole('listitem')
 }
 

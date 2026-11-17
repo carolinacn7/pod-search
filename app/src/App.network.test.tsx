@@ -1,12 +1,13 @@
 import { render, screen, within } from '@testing-library/react'
 import App from './App'
+import { searchPodcasts } from './itunes'
 import { appleResponse, stubFetchJson, stubFetchNetworkError } from './test/apple'
 
 describe('App: la lista viene de la iTunes Search API', () => {
   it('al abrir busca un término en Apple una sola vez', async () => {
     const fetchMock = stubFetchJson(appleResponse)
 
-    render(<App />)
+    render(<App search={searchPodcasts} />)
     await screen.findAllByRole('listitem')
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -18,7 +19,7 @@ describe('App: la lista viene de la iTunes Search API', () => {
   it('mientras llega la respuesta avisa que está cargando', async () => {
     stubFetchJson(appleResponse)
 
-    render(<App />)
+    render(<App search={searchPodcasts} />)
 
     expect(screen.getByRole('status')).toHaveTextContent('Cargando podcasts')
     await screen.findAllByRole('listitem')
@@ -28,7 +29,7 @@ describe('App: la lista viene de la iTunes Search API', () => {
   it('llena las tarjetas con los datos traducidos', async () => {
     stubFetchJson(appleResponse)
 
-    render(<App />)
+    render(<App search={searchPodcasts} />)
 
     const results = screen.getByRole('region', { name: 'Resultados' })
     expect(await within(results).findAllByRole('listitem')).toHaveLength(3)
@@ -44,7 +45,7 @@ describe('App: la lista viene de la iTunes Search API', () => {
   it('si la red falla muestra un mensaje en español y no una página en blanco', async () => {
     stubFetchNetworkError()
 
-    render(<App />)
+    render(<App search={searchPodcasts} />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/no pudimos cargar los podcasts/i)
     expect(screen.getByRole('heading', { level: 1, name: 'Pod Search' })).toBeInTheDocument()
@@ -55,7 +56,7 @@ describe('App: la lista viene de la iTunes Search API', () => {
   it('si Apple responde con error muestra el mismo mensaje', async () => {
     stubFetchJson({}, { ok: false, status: 500 })
 
-    render(<App />)
+    render(<App search={searchPodcasts} />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/no pudimos cargar los podcasts/i)
   })
@@ -63,7 +64,7 @@ describe('App: la lista viene de la iTunes Search API', () => {
   it('si Apple no devuelve resultados lo dice, sin mostrar error', async () => {
     stubFetchJson({ resultCount: 0, results: [] })
 
-    render(<App />)
+    render(<App search={searchPodcasts} />)
 
     expect(await screen.findByText(/no hay podcasts/i)).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
