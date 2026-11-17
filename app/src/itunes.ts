@@ -1,5 +1,5 @@
 import { getConfig } from './config'
-import type { Podcast } from './types'
+import type { Podcast, PodcastRepository } from './types'
 
 // Único lugar que conoce la forma de la iTunes Search API. El resto de la app solo ve `Podcast`.
 // Doc: https://performance-partners.apple.com/search-api
@@ -59,3 +59,6 @@ export async function searchPodcasts(term: string, signal?: AbortSignal): Promis
 
   return (body.results as AppleResult[]).filter(isUsable).map(toPodcast)
 }
+
+/** El adaptador de iTunes visto como repositorio: lo que la capa de lógica sabe usar. */
+export const itunesRepository: PodcastRepository = { search: searchPodcasts }

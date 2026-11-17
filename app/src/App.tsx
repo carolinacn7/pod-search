@@ -4,7 +4,7 @@ import PodcastList from './PodcastList'
 import { filterPodcasts } from './filterPodcasts'
 import type { Podcast, SearchPodcasts } from './types'
 
-// Espera tras la última tecla antes de buscar, para no consultar a Apple por cada letra.
+// Espera tras la última tecla antes de buscar, para no lanzar una búsqueda por cada letra.
 const DEBOUNCE_MS = 400
 
 // Término con el que se llena la lista al abrir la app.
@@ -18,7 +18,7 @@ type Load =
   | { status: 'ready'; podcasts: Podcast[]; term: string }
 
 type AppProps = {
-  /** La fuente de datos. Quien arma la app decide cuál; App no sabe de iTunes. */
+  /** La fuente de datos. Quien arma la app decide cuál; App solo conoce este contrato. */
   search: SearchPodcasts
 }
 
@@ -56,10 +56,10 @@ export default function App({ search }: AppProps) {
   }, [term, search])
 
   // El filtro local solo vale mientras la lista en pantalla no corresponde a lo escrito:
-  // con la respuesta de Apple para ese texto se muestra todo lo que devolvió.
+  // con la respuesta de la fuente para ese texto se muestra todo lo que devolvió.
   const currentTerm = query.trim() || INITIAL_TERM
-  const visible = (podcasts: Podcast[], fetchedFor?: string) =>
-    fetchedFor === currentTerm ? podcasts : filterPodcasts(podcasts, query)
+  const visible = (podcasts: Podcast[], loadedFor?: string) =>
+    loadedFor === currentTerm ? podcasts : filterPodcasts(podcasts, query)
 
   return (
     <main className="page">

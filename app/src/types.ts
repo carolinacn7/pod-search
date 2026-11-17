@@ -11,3 +11,11 @@ export type Podcast = {
 
 /** Contrato de cualquier fuente de podcasts: la app solo conoce esto, no de dónde vienen los datos. */
 export type SearchPodcasts = (term: string, signal?: AbortSignal) => Promise<Podcast[]>
+
+/**
+ * Puerto de salida de la lógica: lo que necesita del mundo exterior, sin saber de dónde viene.
+ * Cada fuente real (una API, una base de datos, un archivo) implementa esto en su propio adaptador.
+ */
+export interface PodcastRepository {
+  search(term: string, signal?: AbortSignal): Promise<Podcast[]>
+}
