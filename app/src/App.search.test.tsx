@@ -24,7 +24,7 @@ describe('App: busca en Apple mientras se escribe', () => {
     expect(terms(fetchMock)[1]).toBe('ética')
   })
 
-  it('al vaciar la caja vuelve al término inicial', async () => {
+  it('al vaciar la caja no busca nada (ya no vuelve al término inicial)', async () => {
     const fetchMock = stubFetchJson(appleResponse)
     render(<App search={searchPodcasts} />)
     await screen.findAllByRole('listitem')
@@ -32,10 +32,11 @@ describe('App: busca en Apple mientras se escribe', () => {
 
     await userEvent.type(input, 'ética')
     await act(() => vi.advanceTimersByTimeAsync(500))
+    const callsBeforeClear = fetchMock.mock.calls.length
     await userEvent.clear(input)
-    await act(() => vi.advanceTimersByTimeAsync(0))
+    await act(() => vi.advanceTimersByTimeAsync(500))
 
-    expect(terms(fetchMock).at(-1)).toBe(terms(fetchMock)[0])
+    expect(fetchMock).toHaveBeenCalledTimes(callsBeforeClear)
   })
 })
 

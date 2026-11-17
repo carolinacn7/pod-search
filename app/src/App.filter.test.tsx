@@ -34,7 +34,7 @@ describe('App: la caja de búsqueda filtra la lista', () => {
     expect(shownTitles()).toEqual(['Conversaciones con Modelos'])
   })
 
-  it('al borrar el término vuelven todos los podcasts', async () => {
+  it('al borrar el término la lista se esconde y aparece el aviso de caja vacía', async () => {
     await renderLoaded()
     const input = screen.getByLabelText('Buscar podcasts')
 
@@ -42,7 +42,8 @@ describe('App: la caja de búsqueda filtra la lista', () => {
     expect(within(results()).getAllByRole('listitem')).toHaveLength(1)
 
     await userEvent.clear(input)
-    expect(within(results()).getAllByRole('listitem')).toHaveLength(3)
+    expect(within(results()).queryAllByRole('listitem')).toHaveLength(0)
+    expect(within(results()).getByText(/escribe algo para buscar/i)).toBeInTheDocument()
   })
 
   it('escribir solo espacios no vacía la lista', async () => {
