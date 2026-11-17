@@ -57,3 +57,21 @@ describe('App: mientras llega la búsqueda nueva', () => {
     expect(titles).toEqual(['Ética y Algoritmos'])
   })
 })
+
+describe('App: cuando llega la respuesta de Apple', () => {
+  beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }))
+  afterEach(() => vi.useRealTimers())
+
+  it('muestra todo lo que devuelve Apple, sin filtrar localmente', async () => {
+    stubFetchJson(appleResponse) // Apple responde 3 podcasts también para "etica"
+    render(<App />)
+    await screen.findAllByRole('listitem')
+
+    await userEvent.type(screen.getByLabelText('Buscar podcasts'), 'etica')
+    // Antes de que termine el debounce, la lista vieja se filtra localmente.
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+
+    await act(() => vi.advanceTimersByTimeAsync(500))
+    expect(screen.getAllByRole('listitem')).toHaveLength(3)
+  })
+})

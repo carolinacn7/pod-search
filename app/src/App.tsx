@@ -16,7 +16,7 @@ const INITIAL_TERM = 'inteligencia artificial'
 type Load =
   | { status: 'loading'; previous: Podcast[] | null }
   | { status: 'error' }
-  | { status: 'ready'; podcasts: Podcast[] }
+  | { status: 'ready'; podcasts: Podcast[]; term: string }
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -43,13 +43,19 @@ export default function App() {
       previous: prev.status === 'ready' ? prev.podcasts : prev.status === 'loading' ? prev.previous : null,
     }))
     searchPodcasts(term, controller.signal).then(
-      (podcasts) => setLoad({ status: 'ready', podcasts }),
+      (podcasts) => setLoad({ status: 'ready', podcasts, term }),
       () => {
         if (!controller.signal.aborted) setLoad({ status: 'error' })
       },
     )
     return () => controller.abort()
   }, [term])
+
+  // El filtro local solo vale mientras la lista en pantalla no corresponde a lo escrito:
+  // con la respuesta de Apple para ese texto se muestra todo lo que devolvió.
+  const currentTerm = query.trim() || INITIAL_TERM
+  const visible = (podcasts: Podcast[], fetchedFor?: string) =>
+    fetchedFor === currentTerm ? podcasts : filterPodcasts(podcasts, query)
 
   return (
     <main className="page">
@@ -61,7 +67,7 @@ export default function App() {
       <section className="results" aria-label="Resultados">
         {load.status === 'loading' && !load.previous && <p role="status">Cargando podcasts…</p>}
         {load.status === 'loading' && load.previous && (
-          <PodcastList podcasts={filterPodcasts(load.previous, query)} />
+          <PodcastList podcasts={visible(load.previous)} />
         )}
         {load.status === 'error' && (
           <p role="alert">
@@ -70,7 +76,7 @@ export default function App() {
         )}
         {load.status === 'ready' && load.podcasts.length === 0 && <p>No hay podcasts para mostrar.</p>}
         {load.status === 'ready' && load.podcasts.length > 0 && (
-          <PodcastList podcasts={filterPodcasts(load.podcasts, query)} />
+          <PodcastList podcasts={visible(load.podcasts, load.term)} />
         )}
       </section>
     </main>
