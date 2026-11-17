@@ -4,7 +4,7 @@ const sources = import.meta.glob('./*.{ts,tsx}', { query: '?raw', import: 'defau
 
 const pantallaYLogica = [
   'App.tsx', 'SearchBox.tsx', 'PodcastList.tsx', 'PodcastCard.tsx',
-  'filterPodcasts.ts', 'podcastSearch.ts', 'types.ts',
+  'filterPodcasts.ts', 'podcastSearch.ts', 'usePodcastSearch.ts', 'types.ts',
 ]
 const sinComentarios = (code: string) => code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 
