@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { filterPodcasts } from './filterPodcasts'
 import type { Podcast, SearchPodcasts } from './types'
 
 // Espera tras la última tecla antes de buscar, para no lanzar una búsqueda por cada letra.
@@ -9,7 +10,7 @@ export const INITIAL_TERM = 'inteligencia artificial'
 
 // En 'loading', `previous` son los podcasts ya en pantalla (si los hay): se siguen mostrando,
 // filtrados localmente, hasta que llegue la respuesta del nuevo término.
-export type Load =
+type Load =
   | { status: 'loading'; previous: Podcast[] | null }
   | { status: 'error' }
   | { status: 'ready'; podcasts: Podcast[]; term: string }
@@ -31,8 +32,36 @@ function useDebouncedTerm(query: string): string {
   return term
 }
 
-/** Busca en la fuente cada vez que cambia el término (con debounce) y expone el estado de la carga. */
-export function usePodcastSearch(search: SearchPodcasts, query: string): Load {
+/** Lo que la pantalla muestra. Se deriva siempre de un único `Load`, así que no hay estados contradictorios. */
+export type View =
+  | { kind: 'loading' }
+  | { kind: 'error' }
+  | { kind: 'empty' }
+  | { kind: 'list'; podcasts: Podcast[] }
+
+function toView(load: Load, query: string): View {
+  // El filtro local solo vale mientras la lista en pantalla no corresponde a lo escrito:
+  // con la respuesta de la fuente para ese texto se muestra todo lo que devolvió.
+  switch (load.status) {
+    case 'error':
+      return { kind: 'error' }
+    case 'loading':
+      return load.previous
+        ? { kind: 'list', podcasts: filterPodcasts(load.previous, query) }
+        : { kind: 'loading' }
+    case 'ready': {
+      if (load.podcasts.length === 0) return { kind: 'empty' }
+      const currentTerm = query.trim() || INITIAL_TERM
+      return {
+        kind: 'list',
+        podcasts: load.term === currentTerm ? load.podcasts : filterPodcasts(load.podcasts, query),
+      }
+    }
+  }
+}
+
+/** Busca en la fuente cada vez que cambia el término (con debounce) y devuelve lo que hay que mostrar. */
+export function usePodcastSearch(search: SearchPodcasts, query: string): View {
   const term = useDebouncedTerm(query)
   const [load, setLoad] = useState<Load>({ status: 'loading', previous: null })
 
@@ -52,5 +81,5 @@ export function usePodcastSearch(search: SearchPodcasts, query: string): Load {
     return () => controller.abort()
   }, [term, search])
 
-  return load
+  return toView(load, query)
 }
