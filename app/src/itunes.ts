@@ -1,3 +1,4 @@
+import { getConfig } from './config'
 import type { Podcast } from './types'
 
 // Único lugar que conoce la forma de la iTunes Search API. El resto de la app solo ve `Podcast`.
@@ -10,8 +11,6 @@ type AppleResult = {
   artworkUrl100?: string
   trackCount?: number
 }
-
-const SEARCH_URL = 'https://itunes.apple.com/search'
 
 export class PodcastSearchError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
@@ -35,7 +34,7 @@ export function toPodcast(apple: AppleResult): Podcast {
 const isUsable = (r: AppleResult) => r.collectionId !== undefined && !!r.collectionName
 
 export async function searchPodcasts(term: string, signal?: AbortSignal): Promise<Podcast[]> {
-  const url = `${SEARCH_URL}?${new URLSearchParams({ term, media: 'podcast', entity: 'podcast', limit: '25' })}`
+  const url = `${getConfig().itunes.searchUrl}?${new URLSearchParams({ term, media: 'podcast', entity: 'podcast', limit: '25' })}`
 
   let response: Response
   try {
