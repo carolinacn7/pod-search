@@ -32,30 +32,35 @@ function useDebouncedTerm(query: string): string {
   return term
 }
 
-/** Lo que la pantalla muestra. Se deriva siempre de un único `Load`, así que no hay estados contradictorios. */
+/**
+ * Lo que la pantalla muestra. Se deriva siempre de un único `Load`, así que no hay estados contradictorios.
+ * `refreshing`: la lista visible es provisional (filtrada en local) mientras llega la búsqueda nueva.
+ */
 export type View =
   | { kind: 'loading' }
   | { kind: 'error' }
-  | { kind: 'empty' }
-  | { kind: 'list'; podcasts: Podcast[] }
+  | { kind: 'empty'; term: string }
+  | { kind: 'list'; podcasts: Podcast[]; refreshing: boolean }
 
 function toView(load: Load, query: string): View {
   // El filtro local solo vale mientras la lista en pantalla no corresponde a lo escrito:
   // con la respuesta de la fuente para ese texto se muestra todo lo que devolvió.
+  const currentTerm = query.trim() || INITIAL_TERM
   switch (load.status) {
     case 'error':
       return { kind: 'error' }
-    case 'loading':
-      return load.previous
-        ? { kind: 'list', podcasts: filterPodcasts(load.previous, query) }
-        : { kind: 'loading' }
+    case 'loading': {
+      // Sin nada que enseñar todavía (o el filtro local no deja nada) seguimos "cargando":
+      // aún no sabemos si de verdad no hay resultados.
+      const shown = load.previous ? filterPodcasts(load.previous, query) : []
+      return shown.length > 0 ? { kind: 'list', podcasts: shown, refreshing: true } : { kind: 'loading' }
+    }
     case 'ready': {
-      if (load.podcasts.length === 0) return { kind: 'empty' }
-      const currentTerm = query.trim() || INITIAL_TERM
-      return {
-        kind: 'list',
-        podcasts: load.term === currentTerm ? load.podcasts : filterPodcasts(load.podcasts, query),
-      }
+      if (load.podcasts.length === 0) return { kind: 'empty', term: load.term }
+      if (load.term === currentTerm) return { kind: 'list', podcasts: load.podcasts, refreshing: false }
+      // La búsqueda del texto nuevo está por empezar (debounce): mientras, se filtra lo que ya hay.
+      const shown = filterPodcasts(load.podcasts, query)
+      return shown.length > 0 ? { kind: 'list', podcasts: shown, refreshing: true } : { kind: 'loading' }
     }
   }
 }
