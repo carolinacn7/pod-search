@@ -36,9 +36,8 @@ describe('App', () => {
     expect(input).toHaveValue('machine learning')
   })
 
-  it('todavía no tiene botón ni lista de resultados', () => {
+  it('todavía no tiene botón de búsqueda', () => {
     render(<App />)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
-    expect(screen.queryByRole('list')).not.toBeInTheDocument()
   })
 })
